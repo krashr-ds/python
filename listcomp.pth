@@ -1,0 +1,15 @@
+# list comparison
+# IBM Python course
+
+squares = ['orange', 'orange', 'purple', 'blue', 'orange']
+new_squares = []
+
+c = 0
+while(squares[c]=='orange'):
+    #new_squares[c] = squares[c] --> doesn't work! you have to use 'append'
+    new_squares.append(squares[c])
+    c+=1
+
+print("We're out after " + str(c) + " reps.")
+print(squares[c])
+new_squares
