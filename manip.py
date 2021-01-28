@@ -187,7 +187,6 @@ def stack_dataframes(files_list, diff_column_name, diff_value_expr, orientation=
 # requires: pandas
 #
 def count_missing(df, cols=[], orientation=0):
-    import pandas as pd
     if len(cols) > 0:
         # subset first
         df = pd.DataFrame(df, cols)
@@ -225,7 +224,7 @@ def combine_columns(df, combine_list, new_col):
 #            containing the combined values of m_cols
 #   requires: pandas, re
 #
-def combine_by_re(df, col_expr):
+def combine_by_re(df, col_expr, verbose=True):
     # faster execution time than list(df)
     all_cols = df.columns.values.tolist()
     m_cols = re.findall(col_expr, " ".join(all_cols))
@@ -238,10 +237,11 @@ def combine_by_re(df, col_expr):
         new_col = "N_" + col_root
 
     if len(m_cols) == 2:
-        print("Combining")
-        print(m_cols)
-        print("Into")
-        print(new_col)
+        if verbose:
+            print("Combining")
+            print(m_cols)
+            print("Into")
+            print(new_col)
         combine_columns(df, m_cols, new_col)
     elif len(m_cols) == 1:
         # don't do anything, nothing to combine
@@ -283,5 +283,3 @@ def recode_col(df, existing_col, mapping_dict, new_col):
 def numeric_only(df):
     numerics = ['int16', 'int32', 'int64', 'float16', 'float32', 'float64']
     return df.select_dtypes(include=numerics)
-
-

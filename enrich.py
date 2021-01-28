@@ -12,7 +12,7 @@
 
 import pandas as pd
 import sklearn.preprocessing as skp
-import numpy as np
+# import numpy as np
 
 
 # standardize dataframe of continuous variables to a new dataframe

@@ -4,6 +4,7 @@
 
 import time
 
+
 # Author: Bex Tuychiev
 def timer(func):
     """

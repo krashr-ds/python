@@ -5,8 +5,10 @@
 
 import manip
 import enrich
+
 import numpy as np
 import pandas as pd
+
 
 manip.block_operator("SampleTextFile_1000kb.txt", manip.do_func(print))
 
@@ -79,26 +81,32 @@ print("\n")
 missing_cols_df.to_csv("Missing_Columns_Count.csv")
 percent_missing_df.to_csv("Missing_Columns_Percent.csv")
 
-
 print("Combine Columns:")
 
-ccol_exprs = ['ALCDAY[0-9]', 'AVEDRNK[0-9]', 'DIABAGE[0-9]', 'DRNKDRI[0-9]', 'FALLINJ[0-9]', 'SLEPTIM[0-9]', 'HEIGHT[0-9]', 'NUMPHON[0-9]', 'WEIGHT[0-9]', 'CHKHEMO[0-9]',
+ccol_exprs = ['ALCDAY[0-9]', 'AVEDRNK[0-9]', 'DIABAGE[0-9]', 'DRNKDRI[0-9]', 'FALLINJ[0-9]', 'SLEPTIM[0-9]',
+              'HEIGHT[0-9]', 'NUMPHON[0-9]', 'WEIGHT[0-9]', 'CHKHEMO[0-9]',
               'MARIJAN[0-9]', 'NUMBURN[0-9]', 'HTIN[0-9]', 'HTM[0-9]', 'WTKG[0-9]', '_BMI[0-9]',
-              'ADDEPEV[0-9]', 'ASTHMA[0-9]', 'CHCCOPD[0-9]', 'CHCKDNY[0-9]', 'CSTATE[0-9]', 'CTELENM[0-9]', 'CTELENUM[0-9]', 'CVDCRHD[0-9]', 'CVDINFR[0-9]',
-              'DIABETE[0-9]', 'EXERANY[0-9]', 'FLUSHOT[0-9]', 'HADHYST[0-9]', 'HADPAP[0-9]', 'HAVARTH[0-9]', 'HLTHPLN[0-9]', 'NUMHHOL[0-9]', 'PCPSAAD[0-9]', 'PCPSADI[0-9]',
-              'PCPSARE[0-9]', 'PNEUVAC[0-9]', 'PSATEST[0-9]', 'PVTRESD[0-9]', 'STATERE[0-9]', 'STOPSMK[0-9]', 'VETERAN[0-9]', 'CAREGIV[0-9]',
-              'CHECKUP[0-9]', 'RSPSTAT[0-9]', 'EMPLOY[0-9]', 'IMFVPLA[0-9|A-Z]', 'LASTDEN[0-9]', 'LASTPAP[0-9]', 'LASTSMK[0-9]', 'PERSDOC[0-9]', 'RENTHOM[0-9]',
-              'RMVTETH[0-9]', 'SEX[0-9]', 'SMOKDAY[0-9]', 'USENOW[0-9]', 'PREDIAB[0-9]', 'EYEEXAM[0-9]', 'HLTHCVR[0-9]', 'DELAYME[0-9]', 'CRGVREL[0-9]', 'CRGVLNG[0-9]',
-              'CRGVHRS[0-9]', 'CRGVPRB[0-9]', 'USEMRJN[0-9]', 'RSNMRJN[0-9]', 'ADPLEAS[0-9]', 'ADDOWN[0-9]', 'CNCRTYP[0-9]', 'CSRVTRT[0-9]', 'CSRVDOC[0-9]', '_PRACE[0-9]',
+              'ADDEPEV[0-9]', 'ASTHMA[0-9]', 'CHCCOPD[0-9]', 'CHCKDNY[0-9]', 'CSTATE[0-9]', 'CTELENM[0-9]',
+              'CTELENUM[0-9]', 'CVDCRHD[0-9]', 'CVDINFR[0-9]',
+              'DIABETE[0-9]', 'EXERANY[0-9]', 'FLUSHOT[0-9]', 'HADHYST[0-9]', 'HADPAP[0-9]', 'HAVARTH[0-9]',
+              'HLTHPLN[0-9]', 'NUMHHOL[0-9]', 'PCPSAAD[0-9]', 'PCPSADI[0-9]',
+              'PCPSARE[0-9]', 'PNEUVAC[0-9]', 'PSATEST[0-9]', 'PVTRESD[0-9]', 'STATERE[0-9]', 'STOPSMK[0-9]',
+              'VETERAN[0-9]', 'CAREGIV[0-9]',
+              'CHECKUP[0-9]', 'RSPSTAT[0-9]', 'EMPLOY[0-9]', 'IMFVPLA[0-9|A-Z]', 'LASTDEN[0-9]', 'LASTPAP[0-9]',
+              'LASTSMK[0-9]', 'PERSDOC[0-9]', 'RENTHOM[0-9]',
+              'RMVTETH[0-9]', 'SEX[0-9]', 'SMOKDAY[0-9]', 'USENOW[0-9]', 'PREDIAB[0-9]', 'EYEEXAM[0-9]', 'HLTHCVR[0-9]',
+              'DELAYME[0-9]', 'CRGVREL[0-9]', 'CRGVLNG[0-9]',
+              'CRGVHRS[0-9]', 'CRGVPRB[0-9]', 'USEMRJN[0-9]', 'RSNMRJN[0-9]', 'ADPLEAS[0-9]', 'ADDOWN[0-9]',
+              'CNCRTYP[0-9]', 'CSRVTRT[0-9]', 'CSRVDOC[0-9]', '_PRACE[0-9]',
               '_MRACE[0-9]', '_SMOKER[0-9]', ' _RFSMOK[0-9]']
 
 for c in ccol_exprs:
     manip.combine_by_re(big_df, c)
 
-
 # create binary columns from non-binary
 #
-binary_cols = ["N_DIABETE", "N_ADDEPEV", "N_CHCCOPD", "N_CHCKDNY", "N_FLUSHOT", "N_HAVARTH", "N_NUMHHOL", "N_PNEUVAC", "N_PVTRESD"]
+binary_cols = ["N_DIABETE", "N_ADDEPEV", "N_CHCCOPD", "N_CHCKDNY", "N_FLUSHOT", "N_HAVARTH", "N_NUMHHOL", "N_PNEUVAC",
+               "N_PVTRESD"]
 for c in binary_cols:
     nc = "B_" + c.split("_")[1]
     manip.create_binary(big_df, [c], [1], [2, 3, 4, 7, 9], nc)
@@ -150,12 +158,18 @@ print("\n")
 
 # Create new column with State Names
 states_dict = {1: 'Alabama', 2: 'Alaska', 4: 'Arizona', 5: 'Arkansas', 6: 'California', 8: 'Colorado', 9: 'Connecticut',
-               10: 'Delaware', 11: 'District of Columbia', 12: 'Florida', 13: 'Georgia', 15: 'Hawaii', 16: 'Idaho', 17: 'Illinois',
-               18: 'Indiana', 19: 'Iowa', 20: 'Kansas', 21: 'Kentucky', 22: 'Louisiana', 23: 'Maine', 24: 'Maryland', 25: 'Massachusetts',
-               26: 'Michigan', 27: 'Minnesota', 28: 'Mississippi', 29: 'Missouri', 30: 'Montana', 31: 'Nebraska', 32: 'Nevada',
-               33: 'New Hampshire', 34: 'New Jersey', 35: 'New Mexico', 36: 'New York', 37: 'North Carolina', 38: 'North Dakota',
-               39: 'Ohio', 40: 'Oklahoma', 41: 'Oregon', 42: 'Pennsylvania', 44: 'Rhode Island', 45: 'South Carolina', 46: 'South Dakota',
-               47: 'Tennessee', 48: 'Texas', 49: 'Utah', 50: 'Vermont', 51: 'Virginia', 53: 'Washington', 54: 'West Virginia', 55: 'Wisconsin',
+               10: 'Delaware', 11: 'District of Columbia', 12: 'Florida', 13: 'Georgia', 15: 'Hawaii', 16: 'Idaho',
+               17: 'Illinois',
+               18: 'Indiana', 19: 'Iowa', 20: 'Kansas', 21: 'Kentucky', 22: 'Louisiana', 23: 'Maine', 24: 'Maryland',
+               25: 'Massachusetts',
+               26: 'Michigan', 27: 'Minnesota', 28: 'Mississippi', 29: 'Missouri', 30: 'Montana', 31: 'Nebraska',
+               32: 'Nevada',
+               33: 'New Hampshire', 34: 'New Jersey', 35: 'New Mexico', 36: 'New York', 37: 'North Carolina',
+               38: 'North Dakota',
+               39: 'Ohio', 40: 'Oklahoma', 41: 'Oregon', 42: 'Pennsylvania', 44: 'Rhode Island', 45: 'South Carolina',
+               46: 'South Dakota',
+               47: 'Tennessee', 48: 'Texas', 49: 'Utah', 50: 'Vermont', 51: 'Virginia', 53: 'Washington',
+               54: 'West Virginia', 55: 'Wisconsin',
                56: 'Wyoming', 66: 'Guam', 72: 'Puerto Rico', 78: 'Virgin Islands', 99: ''}
 manip.recode_col(big_df, "_STATE", states_dict, "_STATENM")
 print("State Names:")
@@ -164,12 +178,15 @@ print("\n")
 
 # Sub-set to continuous variables
 # (NOTE: this df is too big because many categorical variables are coded, and many binary variables are dummy coded.)
-#continuous_df = manip.numeric_only(big_df)
+# continuous_df = manip.numeric_only(big_df)
 
 
-cont_cols = ['ALCDAY5', 'N_AVEDRNK', 'CHILDREN', 'CPDEMO1B', 'N_DIABAGE', 'DRNKDRI2', 'FALLINJ3', 'MAXDRNKS', 'SLEPTIM1', 'HEIGHT3', 'HHADULT',
-            'MENTHLTH', 'NUMMEN', 'NUMWOMEN', 'N_NUMPHON', 'PHYSHLTH', 'POORHLTH', 'WEIGHT2', 'DOCTDIAB', 'CHKHEMO3', 'FEETCHK', 'DRVISITS',
-            'MARIJAN1', 'NUMBURN3', 'LCSFIRST', 'LCSLAST', 'LCSNUMCG', 'CNCRAGE', 'HTIN4', 'HTM4', 'WTKG3', 'N_BMI', '_CHLDCNT']
+cont_cols = ['ALCDAY5', 'N_AVEDRNK', 'CHILDREN', 'CPDEMO1B', 'N_DIABAGE', 'DRNKDRI2', 'FALLINJ3', 'MAXDRNKS',
+             'SLEPTIM1', 'HEIGHT3', 'HHADULT',
+             'MENTHLTH', 'NUMMEN', 'NUMWOMEN', 'N_NUMPHON', 'PHYSHLTH', 'POORHLTH', 'WEIGHT2', 'DOCTDIAB', 'CHKHEMO3',
+             'FEETCHK', 'DRVISITS',
+             'MARIJAN1', 'NUMBURN3', 'LCSFIRST', 'LCSLAST', 'LCSNUMCG', 'CNCRAGE', 'HTIN4', 'HTM4', 'WTKG3', 'N_BMI',
+             '_CHLDCNT']
 
 continuous_df = pd.DataFrame(big_df, columns=cont_cols)
 stand_df = enrich.standardize(continuous_df)
@@ -187,3 +204,5 @@ summary_df = enrich.summarize(continuous_df)
 print("Summary of Not-Null Values: ")
 print(summary_df.head())
 print("\n")
+
+
