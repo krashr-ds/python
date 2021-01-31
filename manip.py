@@ -7,12 +7,8 @@
 # MANIP.py
 #
 #### regex
-#### counting words, characters & null values
 #### substitutions / stripping
-#### scraping your own data
 #### sub-setting
-#### generators
-#### decorators
 #### date aggregation
 #### dataframe aggregation and manipulation
 #
@@ -20,49 +16,11 @@
 # This library requires the use of the following python libraries.
 # Before running this code, please make sure they are installed.
 #
+
+import re
+import datetime
 import numpy as np
 import pandas as pd
-import datetime
-import re
-
-
-# dummy decorator
-# allows execution of any function passed to it, func
-#
-def do_func(func):
-    def wrapper(a):
-        return func(a)
-
-    return wrapper
-
-
-# read_any
-# generator - read any-sized file, fhandle in blocks
-# default size block = 10,000
-#
-def read_any(fhandle, size=10000):
-    block = []
-    for i in fhandle:
-        block.append(i)
-        if len(block) == size:
-            yield block
-            block = []
-
-    if block:
-        yield block
-
-
-# block_operator
-# open and read any-sized file located at path
-# and calls an operational decorator to execute block_op_function
-# on the file block
-# default block size = 10,000
-#
-def block_operator(path, block_op_function, size=10000):
-    with open(path) as lfile:
-        for b in read_any(lfile, size):
-            # do something, for example print
-            block_op_function(b)
 
 
 # count_matches
@@ -100,32 +58,6 @@ def sub_and_write(f, regex, replacement):
 
     # check (debug; small files only!)
     # block_operator(nhn, do_func(print))
-
-
-# count
-# counts file-related things: all, words or lines for a file f
-# returns: an integer
-#
-def count(f, count_type=all):
-    fh = open(f, "r")
-    file_data = fh.read()
-    if count_type == "word":
-        return len(file_data.split(" "))
-
-    elif count_type == "line":
-        return len(file_data.split("\n"))
-
-    else:
-        # entire document / all characters
-        return len(file_data)
-
-
-# scrape a list of fields and their values off a web page
-# or a series of web pages
-# creates: a csv file
-# returns: the name of the csv file written, a string
-#
-# def scrape_a_set(url_list, field_list):
 
 
 # sub-setting
@@ -178,33 +110,6 @@ def stack_dataframes(files_list, diff_column_name, diff_value_expr, orientation=
             dframes[f]["ID"] = dframes[f][diff_column_name].map(str) + dframes[f]["Index"].map(str)
 
     return pd.concat(dframes, orientation)
-
-
-# count_missing
-# counts missing values in a dataframe (df), or counts only values of the columns requested by (cols)
-# if orientation is 0 (default) compute counts col-wise, otherwise compute them row-wise (orientation=1)
-# returns: Series
-# requires: pandas
-#
-def count_missing(df, cols=[], orientation=0):
-    if len(cols) > 0:
-        # subset first
-        df = pd.DataFrame(df, cols)
-
-    # count everything
-    if orientation:
-        return df.isna().sum(axis=1)
-    else:
-        return df.isna().sum()
-
-
-# percent_missing
-# produces a dataframe of the percentage of missing values for each column of a dataframe
-# returns: Series
-# requires: pandas
-#
-def percent_missing(df):
-    return df.isna().mean().round(4) * 100
 
 
 # combine_columns; transform a dataframe
