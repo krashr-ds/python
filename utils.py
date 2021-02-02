@@ -18,6 +18,7 @@ import time
 import tarfile
 import pandas as pd
 import urllib.request as ur
+import sklearn.datasets as data
 
 
 # dummy decorator
@@ -75,6 +76,9 @@ def fetch_data(url, path):
 def load_data(path, csv_file):
     return pd.read_csv(os.path.join(path, csv_file))
 
+
+def fetch_sklearn(dataset, version):
+    return data.fetch_openml(dataset, version=version)
 
 # scrape a list of fields and their values off a web page
 # or a series of web pages

@@ -13,6 +13,7 @@
 import numpy as np
 import pandas as pd
 import zlib as zl
+
 import sklearn.preprocessing as skp
 import sklearn.model_selection as ms
 
@@ -83,3 +84,13 @@ def normalize(df):
 #
 def summarize(df):
     return pd.DataFrame(df.describe())
+
+
+# One-Hot encode a categorical variable
+#
+def one_hot_encode(ds, cat_attribute_name, drop=True):
+    one_hot = pd.get_dummies(ds[cat_attribute_name])
+    if drop:
+        ds = ds.drop(cat_attribute_name, axis=1)
+    ds = ds.join(one_hot)
+    return ds

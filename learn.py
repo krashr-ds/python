@@ -9,16 +9,16 @@
 #### Model testing
 #### Pipeline creation
 #
-
-import sklearn.pipeline as skp
-import sklearn.preprocessing as skprep
-import sklearn.impute as ski
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
 import sklearn.base as skbase
+import sklearn.pipeline as skp
+import sklearn.model_selection as ms
 
 
 # from Hands On ML Book
-# AttributesAdder
-# TODO: Re-attempt generic implementation with additional functions KPR 1/30/2021
+# HousingAttributesAdder
 #
 class HousingAttributesAdder(skbase.BaseEstimator, skbase.TransformerMixin):
     def __init__(self, add_bedrooms_per_room=True):
@@ -32,20 +32,29 @@ class HousingAttributesAdder(skbase.BaseEstimator, skbase.TransformerMixin):
         X["population_per_household"] = X["population"] / X["households"]
         if self.add_bedrooms_per_room:
             X["bedrooms_per_room"] = X["total_bedrooms"] / X["total_rooms"]
-
+        # print(X.columns)
         return X
 
+# These two functions by Kevin Arvai github.com/arvkevi
+def plot_precision_recall_vs_threshold(precisions, recalls, thresholds):
 
-# derived from Hands On ML Book
-# Transformation Pipeline
-# TODO: Re-attempt generic implementation with decorator KPR 1/30/2021
-#
-
-def CreateHousingPipeline():
-    return skp.Pipeline([
-        ("imputer", ski.SimpleImputer(strategy="median")),
-        ("attribs_adder", HousingAttributesAdder()),
-        ("std_scaler", skprep.StandardScaler()),
-    ])
+    plt.figure(figsize=(8, 8))
+    plt.title("Precision and Recall Scores as a function of the decision threshold")
+    plt.plot(thresholds, precisions[:-1], "b--", label="Precision")
+    plt.plot(thresholds, recalls[:-1], "g-", label="Recall")
+    plt.ylabel("Score")
+    plt.xlabel("Decision Threshold")
+    plt.legend(loc='best')
 
 
+def plot_roc_curve(fpr, tpr, label=None):
+
+    plt.figure(figsize=(8,8))
+    plt.title('ROC Curve')
+    plt.plot(fpr, tpr, linewidth=2, label=label)
+    plt.plot([0, 1], [0, 1], 'k--')
+    plt.axis([-0.005, 1, 0, 1.005])
+    plt.xticks(np.arange(0,1, 0.05), rotation=90)
+    plt.xlabel("False Positive Rate")
+    plt.ylabel("True Positive Rate (Recall)")
+    plt.legend(loc='best')
