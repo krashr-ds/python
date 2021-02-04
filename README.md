@@ -4,6 +4,7 @@
 #
 #  MANIP.py:
 #  regex, counting, word-stripping, scraping, subsetting, date aggregation
+#  DataFrame manipulation
 #
 #  ENRICH.py:
 #  statistics. mathematics, distributions & probability
