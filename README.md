@@ -3,8 +3,7 @@
 # HDS 805 exercises in ML; sci-kit learn
 #
 #  MANIP.py:
-#  regex, counting, word-stripping, scraping, subsetting, date aggregation
-#  DataFrame manipulation
+#  regex, word-stripping, subsetting, date aggregation and DataFrame manipulation
 #
 #  ENRICH.py:
 #  splitting training and testing data
@@ -18,5 +17,10 @@
 #  
 #  LEARN.py:
 #  Functions that support the development and evaluation of ML models
+#
+#  UTILS.py:
+#  dummy decorators & block operators, large file reader, data loading, scraping your own data
+#  count words, lines or characters
+#  timer for functions
 #
 # KPR
