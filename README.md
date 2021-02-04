@@ -7,7 +7,9 @@
 #  DataFrame manipulation
 #
 #  ENRICH.py:
-#  statistics. mathematics, distributions & probability
+#  splitting training and testing data
+#  variable and attribute creation and modification for modeling
+#  statistics, mathematics, distributions & probability
 #  
 #  CONSUME.py:
 #  API functions
