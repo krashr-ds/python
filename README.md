@@ -1,27 +1,19 @@
-# python
+# python Data Science library - a work in progress in 2021
 #
-# some exercises from python courses & challenges (labeled)
+# HDS 805 exercises in ML; sci-kit learn
 #
-# repository for MY DS python library:
+#  MANIP.py:
+#  regex, counting, word-stripping, scraping, subsetting, date aggregation
 #
-#  MANIP:
-#  regex
-#  counting
-#  word-stripping
-#  scraping your own data
-#  subsetting
-#  generators
-#  decorators
-#  date aggregation
-#
-#  ENRICH:
-#  statistics
-#  matrix operations
-#  probability
+#  ENRICH.py:
+#  statistics. mathematics, distributions & probability
 #  
-#  CONSUME:
+#  CONSUME.py:
 #  API functions
 #  sensor and simulated sensor data consumption
 #  database connections
 #  
+#  LEARN.py:
+#  Functions that support the development and evaluation of ML models
+#
 # KPR
