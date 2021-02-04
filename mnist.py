@@ -84,12 +84,12 @@ print("\n")
 ###########################################
 # OneVsRestClassifier - OvR
 ###########################################
-#ovr_clf = sk_multi.OneVsRestClassifier(sk_svm.SVC())
-#ovr_clf.fit(X_train, y_train)
-#ovr_prediction = ovr_clf.predict([digit5])
-#print("OvR - What is it? ")
-#print(ovr_prediction)
-#print("\n")
+ovr_clf = sk_multi.OneVsRestClassifier(sk_svm.SVC())
+ovr_clf.fit(X_train, y_train)
+ovr_prediction = ovr_clf.predict([digit5])
+print("OvR - What is it? ")
+print(ovr_prediction)
+print("\n")
 
 #len(ovr_clf.estimators_)
 
