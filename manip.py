@@ -164,10 +164,13 @@ def combine_by_re(df, col_expr, verbose=True):
 #   new_col: the name you want to give to the new binary column example) B_DIABETES
 #   requires: numpy
 #
-def create_binary(df, cols, yes_values, no_values, new_col):
+def create_binary(df, cols, yes_values, no_values, new_col, override_new_values=None):
     for c in cols:
         cur_values = [df[c].isin(yes_values), df[c].isin(no_values)]
-        new_values = [1, 0]
+        if override_new_values is not None:
+            new_values = override_new_values
+        else:
+            new_values = [1, 0]
         df[new_col] = np.select(cur_values, new_values)
 
 

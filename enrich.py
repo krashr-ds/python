@@ -5,6 +5,8 @@
 #
 # ENRICH.py
 #
+#### train-test preparation
+#### distributions
 #### statistics
 #### matrix math
 #### probability
@@ -56,7 +58,7 @@ def split_train_test_strat(data, split_category, n_splits, test_ratio, seed):
     return strat_train_set, strat_test_set
 
 
-# create a categorical values from a continuous value
+# create a categorical value from a continuous value
 # may be used to create strata
 #
 def add_categorical_from_continuous(df, cont_col, cat_col_name, bins, labels):
@@ -86,8 +88,9 @@ def summarize(df):
     return pd.DataFrame(df.describe())
 
 
-# One-Hot encode a categorical variable
-#
+# One-Hot encode a categorical variable using pd.get_dummies
+# When drop=True, drop the categorical variable you used to
+# create the one-hot columns
 def one_hot_encode(ds, cat_attribute_name, drop=True):
     one_hot = pd.get_dummies(ds[cat_attribute_name])
     if drop:

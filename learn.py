@@ -35,7 +35,7 @@ class HousingAttributesAdder(skbase.BaseEstimator, skbase.TransformerMixin):
         # print(X.columns)
         return X
 
-# These two functions by Kevin Arvai github.com/arvkevi
+# These two plotting functions by Kevin Arvai github.com/arvkevi
 def plot_precision_recall_vs_threshold(precisions, recalls, thresholds):
 
     plt.figure(figsize=(8, 8))
