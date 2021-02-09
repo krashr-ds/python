@@ -18,6 +18,7 @@ import zlib as zl
 
 import sklearn.preprocessing as skp
 import sklearn.model_selection as ms
+import seaborn as sb
 
 
 # split a dataframe into a test set and training set
@@ -58,6 +59,24 @@ def split_train_test_strat(data, split_category, n_splits, test_ratio, seed):
     return strat_train_set, strat_test_set
 
 
+# prepare Xs and Ys from test and training data sets
+#
+def prepareXYSets(train, test, y_col):
+    train_x = train.drop(y_col, axis=1)
+    train_y = train[y_col].copy()
+    test_x = test.drop(y_col, axis=1)
+    test_y = test[y_col].copy()
+    return train_x, train_y, test_x, test_y
+
+
+# prepare just x and y, to be split by KFold
+#
+def prepareXY(df, y_col):
+    x = df.drop(y_col, axis=1)
+    y = df[y_col].copy()
+    return x, y
+
+
 # create a categorical value from a continuous value
 # may be used to create strata
 #
@@ -68,17 +87,43 @@ def add_categorical_from_continuous(df, cont_col, cat_col_name, bins, labels):
 # standardize dataframe of continuous variables to a new dataframe
 # to index, join to original dataframe
 #
-def standardize(df):
+def standardize(df, cols=None):
     scale = skp.StandardScaler()
-    return pd.DataFrame(scale.fit_transform(df))
+    if cols is None:
+        # standardize the whole DataFrame
+        return pd.DataFrame(scale.fit_transform(df))
+    else:
+        for c in cols:
+            df[c] = pd.DataFrame(scale.fit_transform(pd.DataFrame(df[c])), columns=[c])
+        return df
 
 
 # normalize dataframe of continuous variables to a new dataframe
 # to index, join to original dataframe
 #
-def normalize(df):
+def normalize(df, cols=None):
     scale = skp.MinMaxScaler()
-    return pd.DataFrame(scale.fit_transform(df))
+    if cols is None:
+        # standardize the whole DataFrame
+        return pd.DataFrame(scale.fit_transform(df))
+    else:
+        for c in cols:
+            df[c] = pd.DataFrame(scale.fit_transform(pd.DataFrame(df[c])), columns=[c])
+        return df
+
+
+# normalize dataframe of continuous variables to a new dataframe
+# to index, join to original dataframe
+#
+def normalizeRobust(df, cols=None):
+    scale = skp.RobustScaler()
+    if cols is None:
+        # standardize the whole DataFrame
+        return pd.DataFrame(scale.fit_transform(df))
+    else:
+        for c in cols:
+            df[c] = pd.DataFrame(scale.fit_transform(pd.DataFrame(df[c])), columns=[c])
+        return df
 
 
 # summarize dataframe of continuous variables to a new dataframe
@@ -97,3 +142,19 @@ def one_hot_encode(ds, cat_attribute_name, drop=True):
         ds = ds.drop(cat_attribute_name, axis=1)
     ds = ds.join(one_hot)
     return ds
+
+
+# replace values in values_list with replacement value
+# for all columns in cols_list in dataframe df.
+# NOTE: use 'np.nan' in list if NaN is one of the values to replace
+#       also use 'np.nan' if it is the replacement value you desire
+#
+def replaceCVs(df, cols_list, values_list, replacement):
+    for c in cols_list:
+        for v in values_list:
+            df[c] = df[c].replace(v, replacement)
+
+    return df
+
+
+
