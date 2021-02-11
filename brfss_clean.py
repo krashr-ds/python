@@ -81,12 +81,15 @@ manip.create_binary(big_df, ["_IMPRACE"], [1], [2, 3, 4, 5, 6], "B_RACE", [1, 2]
 # TRIM the DataFrame to a size that will allow for faster analysis on desired columns
 med_df = pd.DataFrame(big_df, columns=["ID", "YEAR", "_LLCPWT2", "IMONTH", "B_ASTHMA", "B_CANCER", "B_CHCCOPD",
                                        "B_ADDEPEV", "B_DIABETE", "B_HEART", "COMORB_1", "TOTCHRONIC", "CHRONICGRP",
-                                       "_STATE", "_AGEG5YR", "SEX", "_IMPRACE", "B_RACE", "_INCOMG", "_EDUCAG",
+                                       "_STATE", "_AGEG5YR", "_AGE_G", "SEX", "_IMPRACE", "B_RACE", "_INCOMG", "_EDUCAG",
                                        "MARITAL", "B_COUPLED", "HLTHPLN1", "EMPLOY1", "_BMI5CAT", "_SMOKER3"])
 
 # Recode _SMOKER3 and HLTHPLN1 as binary (0,1)
 manip.create_binary(med_df, ["_SMOKER3"], [1, 2], [3, 4, 9], "B_SMOKER")
 manip.create_binary(med_df, ["HLTHPLN1"], [1], [2, 3, 4, 7, 9], "B_HLTHPLN")
+
+# Add "WEIGHT" as a copy of "_LLCPTW2"
+med_df["WEIGHT"] = med_df["_LLCPWT2"].copy()
 
 # Check Data Set for NULLs
 print(med_df.info())
@@ -149,8 +152,11 @@ for b in binary_labels:
     manip.recode_col(med_df, b, binary_dict, new_col)
 
 age_dict = {1: "18-24", 2: "25-29", 3: "30-34", 4: "35-39", 5: "40-44", 6: "45-49", 7: "50-54", 8: "55-59", 9: "60-64",
-            10: "65-69", 11: "70-74", 12: "75-79", 13: "80+", 14: ' '}
+            10: "65-69", 11: "70-74", 12: "75-79", 13: "80+"}
 manip.recode_col(med_df, "_AGEG5YR", age_dict, "L_AGEG5YR")
+
+age_dict2 = {1: "18-24", 2: "25-34", 3: "35-44", 4: "45-54", 5: "55-64", 6: "65+"}
+manip.recode_col(med_df, "_AGE_G", age_dict, "L_AGE_G")
 
 sex_dict = {1: "Male", 2: "Female"}
 manip.recode_col(med_df, "SEX", sex_dict, "L_SEX")
@@ -165,13 +171,13 @@ employ_dict = {1: "Employed", 2: "Self-Employed", 3: "Out of Work 1 yr+", 4: "Ou
                6: "Student", 7: "Retired", 8: "Unable", 9: " "}
 manip.recode_col(med_df, "EMPLOY1", employ_dict, "L_EMPLOY1")
 
-marital_dict = {1: "Married", 2: "Divorced", 3: "Widowed", 4: "Separated", 5: "Never Married", 6: "Unmarried Couple", 9: " "}
+marital_dict = {1: "Married", 2: "Divorced", 3: "Widowed", 4: "Separated", 5: "Never Married", 6: "Unmarried Couple"}
 manip.recode_col(med_df, "MARITAL", marital_dict, "L_MARITAL")
 
-income_dict = {1: "<$15K", 2: "$15K - $25K", 3: "$25K - $35K", 4: "$35K - $50K", 5: "$50K+", 9: " "}
+income_dict = {1: "<$15K", 2: "$15K - $25K", 3: "$25K - $35K", 4: "$35K - $50K", 5: "$50K+"}
 manip.recode_col(med_df, "_INCOMG", income_dict, "L_INCOMG")
 
-educa_dict = {1: "< HS", 2: "HS Grad / GED", 3: "Some College", 4: "College Grad", 9: " "}
+educa_dict = {1: "< HS", 2: "HS Grad / GED", 3: "Some College", 4: "College Grad"}
 manip.recode_col(med_df, "_EDUCAG", educa_dict, "L_EDUCAG")
 
 bmi_dict = {1: "< 18.5", 2: "18.5 - 25", 3: "25 - 30", 4: "30+"}
@@ -188,4 +194,15 @@ percent_missing_df.to_csv("Missing_Columns_Percent.csv")
 
 # create CSV of clean DataFrame
 #
-med_df.to_csv(("BRFSS_Clean_Combo.csv"))
+med_df.to_csv("BRFSS_Clean_Combo.csv")
+
+# create a SAMPLE of 12000 random rows
+#
+smaller = med_df.sample(n=12000)
+smaller.to_csv("BRFSS_SAMPLE.csv")
+
+# create a WEIGHTED SAMPLE, also
+#
+sm_weighted = med_df.sample(n=12000, weights=med_df['WEIGHT'])
+sm_weighted.to_csv("BRFSS_SAMPLE_WEIGHTED.csv")
+
