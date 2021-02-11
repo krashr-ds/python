@@ -141,46 +141,48 @@ states_abbr_dict = {1: 'AL', 2: 'AK', 4: 'AZ', 5: 'AR', 6: 'CA', 8: 'CO', 9: 'CT
 
 manip.recode_col(med_df, "_STATE", states_abbr_dict, "L_STATEAB")
 
-binary_dict = {0: 'No', 1: 'Yes'}
-binary_labels = ["B_ASTHMA", "B_CANCER", "B_CHCCOPD", "B_ADDEPEV", "B_DIABETE", "B_HEART", "B_SMOKER", "B_HLTHPLN", "B_COUPLED", "COMORB_1"]
-for b in binary_labels:
-    if b != "COMORB_1":
-        newcol_sfx = b.split("_")[1]
-    else:
-        newcol_sfx = "COMORB"
-    new_col = "L_" + newcol_sfx
-    manip.recode_col(med_df, b, binary_dict, new_col)
+# binary_dict = {0: 'No', 1: 'Yes'}
+# binary_labels = ["B_ASTHMA", "B_CANCER", "B_CHCCOPD", "B_ADDEPEV", "B_DIABETE", "B_HEART", "B_SMOKER", "B_HLTHPLN", "B_COUPLED", "COMORB_1"]
+# for b in binary_labels:
+#    if b != "COMORB_1":
+#        newcol_sfx = b.split("_")[1]
+#    else:
+#        newcol_sfx = "COMORB"
+#    new_col = "L_" + newcol_sfx
+#   manip.recode_col(med_df, b, binary_dict, new_col)
 
-age_dict = {1: "18-24", 2: "25-29", 3: "30-34", 4: "35-39", 5: "40-44", 6: "45-49", 7: "50-54", 8: "55-59", 9: "60-64",
-            10: "65-69", 11: "70-74", 12: "75-79", 13: "80+"}
-manip.recode_col(med_df, "_AGEG5YR", age_dict, "L_AGEG5YR")
+# Choose one - you cannot one-hot encode both of these variables because of column name conflicts.
+#
+# age_dict = {1: "18-24", 2: "25-29", 3: "30-34", 4: "35-39", 5: "40-44", 6: "45-49", 7: "50-54", 8: "55-59", 9: "60-64",
+#           10: "65-69", 11: "70-74", 12: "75-79", 13: "80+"}
+# manip.recode_col(med_df, "_AGEG5YR", age_dict, "L_AGEG5YR")
 
 age_dict2 = {1: "18-24", 2: "25-34", 3: "35-44", 4: "45-54", 5: "55-64", 6: "65+"}
-manip.recode_col(med_df, "_AGE_G", age_dict, "L_AGE_G")
+manip.recode_col(med_df, "_AGE_G", age_dict2, "L_AGE_G")
 
-sex_dict = {1: "Male", 2: "Female"}
+sex_dict = {1: "MALE", 2: "FEMALE"}
 manip.recode_col(med_df, "SEX", sex_dict, "L_SEX")
 
 race_dict = {1: "White", 2: "Black / African Am", 3: "Asian Am", 4: "Native Am/PI/AK Native", 5: "Hispanic", 6: "Other"}
 manip.recode_col(med_df, "_IMPRACE", race_dict, "L_IMPRACE")
 
-race_dict2 = {1: "White", 2: "BIPOC"}
+race_dict2 = {1: "WHITE", 2: "BIPOC"}
 manip.recode_col(med_df, "B_RACE", race_dict2, "L_RACE")
 
-employ_dict = {1: "Employed", 2: "Self-Employed", 3: "Out of Work 1 yr+", 4: "Out of Work <1 yr", 5: "Homemaker",
-               6: "Student", 7: "Retired", 8: "Unable", 9: " "}
+employ_dict = {1: "EMPLOYED", 2: "SELF-EMPLOYED", 3: "OOW 1 yr+", 4: "OOW <1 yr", 5: "HOMEMAKER",
+               6: "STUDENT", 7: "RETIRED", 8: "UNABLE"}
 manip.recode_col(med_df, "EMPLOY1", employ_dict, "L_EMPLOY1")
 
-marital_dict = {1: "Married", 2: "Divorced", 3: "Widowed", 4: "Separated", 5: "Never Married", 6: "Unmarried Couple"}
+marital_dict = {1: "MARRIED", 2: "DIVORCED", 3: "WIDOWED", 4: "SEPARATED", 5: "NEVER MARRIED", 6: "UNMARRIED COUPLE"}
 manip.recode_col(med_df, "MARITAL", marital_dict, "L_MARITAL")
 
-income_dict = {1: "<$15K", 2: "$15K - $25K", 3: "$25K - $35K", 4: "$35K - $50K", 5: "$50K+"}
+income_dict = {1: "<$15K", 2: "$15K-25K", 3: "$25K-35K", 4: "$35K-50K", 5: "$50K+"}
 manip.recode_col(med_df, "_INCOMG", income_dict, "L_INCOMG")
 
-educa_dict = {1: "< HS", 2: "HS Grad / GED", 3: "Some College", 4: "College Grad"}
+educa_dict = {1: "< HS", 2: "HS GRAD", 3: "SOME COLLEGE", 4: "COLLEGE GRAD"}
 manip.recode_col(med_df, "_EDUCAG", educa_dict, "L_EDUCAG")
 
-bmi_dict = {1: "< 18.5", 2: "18.5 - 25", 3: "25 - 30", 4: "30+"}
+bmi_dict = {1: "UNDER WEIGHT", 2: "NORMAL WEIGHT", 3: "OVER WEIGHT", 4: "OBESE"}
 manip.recode_col(med_df, "_BMI5CAT", bmi_dict, "L_BMI5CAT")
 
 month_dict = {1: "January", 2: "February", 3: "March", 4: "April", 5: "May", 6: "June", 7: "July", 8: "August",
@@ -198,11 +200,11 @@ med_df.to_csv("BRFSS_Clean_Combo.csv")
 
 # create a SAMPLE of 12000 random rows
 #
-smaller = med_df.sample(n=12000)
+smaller = med_df.sample(n=50000)
 smaller.to_csv("BRFSS_SAMPLE.csv")
 
 # create a WEIGHTED SAMPLE, also
 #
-sm_weighted = med_df.sample(n=12000, weights=med_df['WEIGHT'])
+sm_weighted = med_df.sample(n=50000, weights=med_df['WEIGHT'])
 sm_weighted.to_csv("BRFSS_SAMPLE_WEIGHTED.csv")
 
