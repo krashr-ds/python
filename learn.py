@@ -77,17 +77,20 @@ def plot_for_scale_type(df, cols):
 def initTrainLargeLogistic(x, y, test_x, test_y):
 
     # NOTE: Always examine and scale data prior to LR
-    # Using SGD on Logistic Regression Model for performance
-    logModel = lm.SGDClassifier(loss="log", penalty="l2")
+    # Attempting to use SGDClassifier for Logistic Regression on large dataset
+    # Preliminary model - increase max_iter, allow early_stopping for performance
+    logModel = lm.SGDClassifier(loss="log", penalty="l2", max_iter=5000, early_stopping=True)
 
     # Cross Validate using 10 iterations
-    scores = ms.cross_val_score(logModel, x, y, cv = 10, scoring = 'f1_weighted')
+    scores = ms.cross_val_score(logModel, x, y, cv = 10)
     print("Initial accuracy: %0.2f (+/- %0.2f)" % (scores.mean(), scores.std() * 2))
 
-    # Evaluate hyperparameters (but do not change loss type)
+    # Evaluate hyperparameters (do not change loss type)
     params = {
         "alpha": [0.0001, 0.001, 0.01, 0.1],
         "penalty": ["l2", "l1", "elasticnet", "none"],
+        "max_iter": [2500, 5000],
+        "early_stopping": [True]
     }
 
     logModel2 = lm.SGDClassifier(loss="log")
@@ -100,13 +103,13 @@ def initTrainLargeLogistic(x, y, test_x, test_y):
 # Show all Model metrics
 # And plot PR and ROC curves
 #
-def showMetrics(model, X, y, yTest, yPredicted, cv=5):
+def showMetrics(model, yTest, yPredicted, X=None, y=None, cv=None):
 
     # Confusion Matrix
     cm = smet.confusion_matrix(yTest, yPredicted)
     print("Confusion Matrix: ")
-    print("Row 1 - Things that were NOT 5s: true negatives, false positives")
-    print("Row 2 - Things that were 5s: false negatives, true positives")
+    print("Row 1 - true negatives, false positives")
+    print("Row 2 - false negatives, true positives")
     print(cm)
     print("\n")
 
@@ -124,25 +127,44 @@ def showMetrics(model, X, y, yTest, yPredicted, cv=5):
     print("\n")
 
     # Full Decision Function Analysis for model
-    y_scores =ms.cross_val_predict(model, x, y, cv=cv, method="decision_function")
-    precisions, recalls, thresholds = smet.precision_recall_curve(y, y_scores)
+    y_scores = yPredicted
+    precisions = []
+    recalls = []
+    thresholds = []
+    if cv is not None:
+        # do cross validation, re-define yscores
+        y_scores =ms.cross_val_predict(model, X, y, cv=cv, method="decision_function")
+        precisions, recalls, thresholds = smet.precision_recall_curve(y, y_scores)
+    else:
+        precisions, recalls, thresholds = smet.precision_recall_curve(yTest, y_scores)
+
     plot_precision_recall_vs_threshold(precisions, recalls, thresholds)
     plt.show()
 
     # The ROC: sensitivity (recall) vs. 1 - specificity (TNR)
-    fpr, tpr, thresholds = smet.roc_curve(y, y_scores)
+    fpr = []
+    tpr = []
+    thresholds = []
+    if cv is not None:
+        #use cross-validated predictions
+        fpr, tpr, thresholds = smet.roc_curve(y, y_scores)
+    else:
+        fpr, tpr, thresholds = smet.roc_curve(yTest, y_scores)
+
     plot_roc_curve(fpr, tpr)
     plt.show()
 
     # Compute AUC
-    auc_score = smet.roc_auc_score(y, y_scores)
+    if cv is not None:
+        auc_score = smet.roc_auc_score(y, y_scores)
+    else:
+        auc_score = smet.roc_auc_score(yTest, y_scores)
+
     print("AUC Score: ")
     print(auc_score)
     print("\n")
 
-    # If the positive class is rare, and you want to avoid false
-    # positives more than false negatives - prefer PR curve.
-    # Otherwise, use AUC.
+
 
 
 

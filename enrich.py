@@ -25,7 +25,7 @@ import seaborn as sb
 # using a random method
 # supply seed / random_state for reproducibility
 #
-def split_train_test(data, test_ratio, seed):
+def split_train_test_rand(data, test_ratio, seed):
     rs = np.random.RandomState(seed)
     idx_shuffle = rs.permutation(len(data))
     td_size = int(len(data) * test_ratio)
@@ -59,6 +59,16 @@ def split_train_test_strat(data, split_category, n_splits, test_ratio, seed):
     return strat_train_set, strat_test_set
 
 
+def split_train_test_shuffle(data, n_splits, test_ratio, seed=None):
+    train_set = pd.DataFrame(data=None, columns=data.columns, index=data.index)
+    test_set = pd.DataFrame(data=None, columns=data.columns, index=data.index)
+    rs = ms.ShuffleSplit(n_splits=n_splits, test_size=test_ratio, random_state=seed)
+    for train_idx, test_idx in rs.split(data):
+        train_set = data.loc[train_idx]
+        test_set = data.loc[test_idx]
+    return train_set, test_set
+
+
 # prepare Xs and Ys from test and training data sets
 #
 def prepareXYSets(train, test, y_col):
@@ -69,7 +79,7 @@ def prepareXYSets(train, test, y_col):
     return train_x, train_y, test_x, test_y
 
 
-# prepare just x and y, to be split by KFold
+# prepare just x and y
 #
 def prepareXY(df, y_col):
     x = df.drop(y_col, axis=1)
@@ -84,7 +94,7 @@ def add_categorical_from_continuous(df, cont_col, cat_col_name, bins, labels):
     df[cat_col_name] = pd.cut(df[cont_col], bins=bins, labels=labels)
 
 
-# standardize dataframe of continuous variables to a new dataframe
+# standardize dataframe of CONTINUOUS variables to a new dataframe
 # to index, join to original dataframe
 #
 def standardize(df, cols=None):
@@ -98,7 +108,7 @@ def standardize(df, cols=None):
         return df
 
 
-# normalize dataframe of continuous variables to a new dataframe
+# normalize dataframe of CONTINUOUS variables to a new dataframe
 # to index, join to original dataframe
 #
 def normalize(df, cols=None):
@@ -112,7 +122,7 @@ def normalize(df, cols=None):
         return df
 
 
-# normalize dataframe of continuous variables to a new dataframe
+# normalize dataframe of CONTINUOUS variables to a new dataframe
 # to index, join to original dataframe
 #
 def normalizeRobust(df, cols=None):
@@ -126,14 +136,14 @@ def normalizeRobust(df, cols=None):
         return df
 
 
-# summarize dataframe of continuous variables to a new dataframe
+# summarize dataframe of CONTINUOUS variables to a new dataframe
 # IMPORTANT: 'describe' method ignores NULL and NaN values!!
 #
 def summarize(df):
     return pd.DataFrame(df.describe())
 
 
-# One-Hot encode a categorical variable using pd.get_dummies
+# One-Hot encode a CATEGORICAL variable using pd.get_dummies
 # When drop=True, drop the categorical variable you used to
 # create the one-hot columns
 def one_hot_encode(ds, cat_attribute_name, drop=True):

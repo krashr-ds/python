@@ -1,71 +1,164 @@
-# BRFSS Assignment: HDS 805
-# Author: KPR  Time Frame: January 2021
+# Binary Classifier Pipeline Script
+# Compare all the models and run the best one on the large data set
 #
-# brfss_binary.py
-# Design, apply & test binary classification models
-#
-# Model 1: Logistic regression
-# Model 2: Naive Bayes
-# Model 3: KNN
-# Model 4: RF
-# Model 5: Gradient Boosting
-# Model 6: XGBoost
 
-
+import manip
 import enrich
 import learn
-
-import numpy as np
+import importlib
 import pandas as pd
-import seaborn as sb
-import matplotlib.pyplot as plt
 
-import sklearn.metrics as smet
-import sklearn.linear_model as lm
+# classifiers
+from sklearn.linear_model import LogisticRegression
+from sklearn.naive_bayes import GaussianNB
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
+from xgboost import XGBClassifier
 
-
-brfss = pd.read_csv('BRFSS_Clean_Combo.csv')
-
-# MODEL 1: LOGISTIC REGRESSION
-# ----------------------------
-# prepare for logit modeling by dropping label columns
-brfss1 = brfss.drop(columns=['L_STATENM', 'L_STATEAB', 'L_ASTHMA', 'L_CANCER', 'L_CHCCOPD', 'L_ADDEPEV', 'L_DIABETE',
-                             'L_HEART', 'L_SMOKER', 'L_HLTHPLN', 'L_COUPLED', 'L_COMORB', 'L_AGEG5YR', 'L_SEX',
-                             'L_IMPRACE', 'L_RACE', 'L_EMPLOY1', 'L_MARITAL', 'L_INCOMG', 'L_EDUCAG', 'L_BMI5CAT',
-                             'L_IMONTH'], axis=1)
-
-# print correlation matrix
-# print(brfss1.corr()["COMORB_1"].sort_values(ascending=False))
-
-# define predictors, retain y = COMORB_1
-brfss1 = pd.DataFrame(brfss1,
-                      columns=["B_ADDEPEV", "B_DIABETE", "B_CANCER", "B_ASTHMA", "B_CHCCOPD", "EMPLOY1", "B_HEART", "_AGEG5YR",
-                               "_BMI5CAT", "SEX", "_SMOKER3", "B_HLTHPLN", "_INCOMG", "B_COUPLED", "_EDUCAG", "COMORB_1"])
-
-# translate NaN, blank and 9 values for non-binary categorical variables to zero
-brfss1 = enrich.replaceCVs(brfss1, ["SEX", "_AGEG5YR", "EMPLOY1", "_INCOMG", "_EDUCAG", "_BMI5CAT", "_SMOKER3"],
-                           [np.nan, 9, ""], 0)
-
-# Examine data to determine scale-type
-# NOTE: Commented out after use, so it doesn't show plots each time.
-# learn.plot_for_scale_type(brfss1, ["SEX", "_AGEG5YR", "_IMPRACE", "_INCOMG", "_EDUCAG", "MARITAL", "EMPLOY1"])
-
-# Data is not normally distributed; apply MinMaxScaler to non-binary columns
-brfss1 = enrich.normalize(brfss1, ["SEX", "_AGEG5YR", "EMPLOY1", "_INCOMG", "_EDUCAG", "_BMI5CAT", "_SMOKER3"])
+# accuracy scoring, and data partitioning
+from sklearn.metrics import accuracy_score
+from sklearn.metrics import precision_score
+from sklearn.metrics import recall_score
+from sklearn.metrics import confusion_matrix
+from sklearn.metrics import roc_auc_score
+from sklearn.metrics import f1_score
+from sklearn.model_selection import train_test_split
 
 
-# Stratified Shuffle Split based on the outcome variable
-brfss_train, brfss_test = enrich.split_train_test_strat(brfss1, "COMORB_1", 1, 0.2, 42)
+def getInstance(module, classname, params):
+    my_module = importlib.import_module(module)
+    my_class = getattr(my_module, classname)
+    if params is not None:
+        instance = my_class(**params)
+    else:
+        instance = my_class()
+    print("class instanced:", instance)
+    return instance
 
-# Logistic Regression - initial & GridSearch evaluation, uses StratifiedKFold for k=10
-brfss_x, brfss_y, test_x, test_y = enrich.prepareXYSets(brfss_train, brfss_test, "COMORB_1")
-learn.initTrainLargeLogistic(brfss_x, brfss_y, test_x, test_y)
 
-# Params result - alpha: 0.0001, penalty: "l2"; final accuracy 0.63
-logModel = lm.SGDClassifier(loss="log", penalty="l2", alpha=0.0001)
-logModel.fit(brfss_x, brfss_y)
-yPredicted = logModel.predict(test_x)
-print('Accuracy: {:.2f}'.format(smet.accuracy_score(test_y, yPredicted)))
+# Classifiers we'd like to compare
+classifiers = {
+    "Logistic Regression": ["sklearn.linear_model", "LogisticRegression", None],
+    "Gaussian Naive Bayes": ["sklearn.naive_bayes", "GaussianNB", None],
+    "K-Nearest Neighbors": ["sklearn.neighbors", "KNeighborsClassifier", {"n_neighbors": 10}],
+    "Random Forest": ["sklearn.ensemble", "RandomForestClassifier", None],
+    "Gradient Boosting": ["sklearn.ensemble", "GradientBoostingClassifier", None],
+    "XGBoost": ["xgboost", "XGBClassifier", {"use_label_encoder": False}]
+}
 
-# Show all metrics
-learn.showMetrics(logModel, brfss_x, brfss_y, test_y, yPredicted, cv=10)
+# define columns to use
+binary_columns = ["B_SMOKER", "B_HLTHPLN", "B_COUPLED", "B_VEGGIE", "B_EXERCISE", "B_EXER30", "B_SLEEPOK", "B_BINGER",
+                  "B_CHECKUP", "B_GOODHLTH", "B_POORHLTH", "B_SEATBLT", "B_HIVRISK"]
+label_columns = ["L_SEX", "L_AGE_G", "L_EMPLOY1", "L_INCOMG", "L_EDUCAG", "L_BMI5CAT", "L_IMPRACE"]
+labelled_regions = ["L_REGION"]
+target = ["COMORB_1"]
+
+print("BINARY CLASSIFICATION: BRFSS DATASET 2017-2019 \n")
+print("OUTCOME: ANY CHRONIC CONDITION (COMORB_1 = 1), OR NOT (COMORB_1 = 0)\n\n")
+
+# read in the weighted 50,000 row preliminary sample
+raw = pd.read_csv("BRFSS_SAMPLE_WEIGHTED.csv")
+brfss_small = pd.DataFrame(raw, columns=binary_columns + label_columns + labelled_regions + target)
+print("Preliminary 50,000 row sub-set:\n")
+print(brfss_small.info())
+
+# random re-balance the sample
+print("Randomly re-balancing sample to 50/50 outcomes.\n")
+brfss_small = manip.rebalanceSample(brfss_small, "COMORB_1", 1, 0, .5, 42)
+X, Y = enrich.prepareXY(brfss_small, "COMORB_1")
+print("X", X.shape, "Y", Y.shape)
+
+
+# Do categorical encoding
+#
+# NOTE: I tried every combination of encoders.  loo encoding did increase the performance of the
+# Naive Bayes algorithm over one-hot, but one-hot worked better for every other model.
+# Since I have chosen to only tune the two best-performing models, and even with loo, NB
+# was never going to be one of them, I decided not to vary encoding by model.
+print("One-hot encoding all categorical columns.\n")
+X = manip.doCleanupEncode(X, oh=label_columns + labelled_regions)
+print("FINAL preliminary dataset:\n")
+print(X.info())
+
+# train and check the model against the test data for each classifier
+iterations = 10
+results = {}
+for itr in range(iterations):
+
+    # Reshuffle training/testing datasets by sampling randomly 80/20% of the input data
+    print("Shuffling training/testing datasets...")
+    X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2)
+
+    for classifier in classifiers:
+        clf = getInstance(classifiers[classifier][0], classifiers[classifier][1], classifiers[classifier][2])
+        print("Fitting model...")
+        clf.fit(X_train, Y_train)
+
+        # predict on test data
+        prediction = clf.predict(X_test)
+
+        # compute accuracy and sum it to the previous ones
+        accuracy = accuracy_score(Y_test, prediction)
+        precision = precision_score(Y_test, prediction)
+        recall = recall_score(Y_test, prediction)
+        cm = confusion_matrix(Y_test, prediction)
+        roc = roc_auc_score(Y_test, prediction)
+        f1 = f1_score(Y_test, prediction)
+
+        if classifier in results:
+            results[classifier] = results[classifier] + accuracy
+        else:
+            results[classifier] = accuracy
+
+        print(itr, ": Classifier: ", classifier, " Accuracy: ", accuracy, "\nPrecision: ", precision, "\nRecall: ", recall,
+              "\nROC: ", roc, "\nF1: ", f1, "\nConfusion Matrix:\n", cm, "\n\n")
+
+
+print("Classifiers average scores over", iterations, "iterations are:")
+halloffame = [(v, k) for k, v in results.items()]
+halloffame.sort(reverse=True)
+for v, k in halloffame:
+    print("\t-", k, "with", v / iterations * 100, "% accuracy")
+
+# using the best to train the full dataset
+raw = pd.read_csv("BRFSS_Clean_Combo.csv")
+brfss = pd.DataFrame(raw, columns=binary_columns + label_columns + labelled_regions + target)
+brfss = manip.rebalanceSample(brfss, "COMORB_1", 1, 0, .5, 42)
+X, Y = enrich.prepareXY(brfss, "COMORB_1")
+X = manip.doCleanupEncode(X, oh=label_columns + labelled_regions)
+X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2)
+
+
+print("Retraining the Full Data-Set with the Top 2 Classifiers:", halloffame[0], ", ", halloffame[1])
+print("\n")
+bestclf1 = getInstance(classifiers[halloffame[0][1]][0], classifiers[halloffame[0][1]][1],
+                      classifiers[halloffame[0][1]][2])
+print("FITTING...")
+bestclf1.fit(X_train, Y_train)
+print("PREDICTING...")
+prediction = bestclf1.predict(X_test)
+print("SCORES:")
+accuracy = accuracy_score(Y_test, prediction)
+precision = precision_score(Y_test, prediction)
+recall = recall_score(Y_test, prediction)
+
+
+print(bestclf1, "Accuracy: ", accuracy, " Precision: ", precision, " Recall: ", recall, "\n")
+learn.showMetrics(bestclf1, yTest=Y_test, yPredicted=prediction)
+
+bestclf2 = getInstance(classifiers[halloffame[1][1]][0], classifiers[halloffame[1][1]][1],
+                      classifiers[halloffame[1][1]][2])
+print("FITTING...")
+bestclf2.fit(X_train, Y_train)
+print("PREDICTING...")
+prediction = bestclf2.predict(X_test)
+print("CRUDE SCORES (pre-tuning):")
+accuracy = accuracy_score(Y_test, prediction)
+precision = precision_score(Y_test, prediction)
+recall = recall_score(Y_test, prediction)
+
+
+print(bestclf2, "Accuracy: ", accuracy, " Precision: ", precision, " Recall: ", recall, "\n")
+learn.showMetrics(bestclf2, yTest=Y_test, yPredicted=prediction)
+
+print("BINARY CLASSIFICATION COMPLETE.")

@@ -38,7 +38,6 @@ for c in binary_cols:
 
 manip.create_binary(big_df, ["_CASTHM1"], [2], [1, 7, 9], "B_ASTHMA")
 
-
 # combine multiple non-binary columns into one binary column
 #
 cols_to_1 = ["CHCSCNCR", "CHCOCNCR"]
@@ -78,15 +77,55 @@ manip.create_binary(big_df, ["MARITAL"], [1, 6], [2, 3, 4, 5, 9], "B_COUPLED")
 # Create binary summary variable, B_RACE, based on _IMPRACE
 manip.create_binary(big_df, ["_IMPRACE"], [1], [2, 3, 4, 5, 6], "B_RACE", [1, 2])
 
-# TRIM the DataFrame to a size that will allow for faster analysis on desired columns
-med_df = pd.DataFrame(big_df, columns=["ID", "YEAR", "_LLCPWT2", "IMONTH", "B_ASTHMA", "B_CANCER", "B_CHCCOPD",
-                                       "B_ADDEPEV", "B_DIABETE", "B_HEART", "COMORB_1", "TOTCHRONIC", "CHRONICGRP",
-                                       "_STATE", "_AGEG5YR", "_AGE_G", "SEX", "_IMPRACE", "B_RACE", "_INCOMG", "_EDUCAG",
-                                       "MARITAL", "B_COUPLED", "HLTHPLN1", "EMPLOY1", "_BMI5CAT", "_SMOKER3"])
+# Lifestyle Variables
+manip.create_binary(big_df, ["_FRTLT1A"], [1], [2, 3], "B_FRUIT")
+manip.create_binary(big_df, ["_VEGLT1A"], [1], [2, 9], "B_VEGGIE")
+manip.create_binary(big_df, ["_RFBING5"], [2], [1, 9], "B_BINGER")
+manip.create_binary(big_df, ["CHECKUP1"], [1], [2, 3, 4, 7, 8, 9, np.nan], "B_CHECKUP")
+manip.create_binary(big_df, ["_RFHLTH"], [1], [2, 9], "B_GOODHLTH")
+manip.create_binary(big_df, ["HIVRISK5"], [1], [2, 7, 9, np.nan], "B_HIVRISK")
+manip.create_binary(big_df, ["_SMOKER3"], [1, 2], [3, 4, 9], "B_SMOKER")
+manip.create_binary(big_df, ["HLTHPLN1"], [1], [2, 3, 4, 7, 9], "B_HLTHPLN")
 
-# Recode _SMOKER3 and HLTHPLN1 as binary (0,1)
-manip.create_binary(med_df, ["_SMOKER3"], [1, 2], [3, 4, 9], "B_SMOKER")
-manip.create_binary(med_df, ["HLTHPLN1"], [1], [2, 3, 4, 7, 9], "B_HLTHPLN")
+# Chose not to use EXERANY2, even though it was available for all 3 years
+# Using EXEROFT1 and EXERHMM1 instead
+if_ex = [big_df["EXEROFT1"] < 200, big_df["EXEROFT1"] >= 200]
+then_ex = [1, 0]
+big_df["B_EXERCISE"] = np.select(if_ex, then_ex)
+manip.create_binary(big_df, ["B_EXERCISE"], [1], [0, np.nan], "B_EXERCISE")
+
+big_df["B_EXER30"] = big_df["EXERHMM1"].copy()
+if_ex2 = [big_df["B_EXER30"] >= 30, big_df["B_EXER30"] < 30]
+then_ex2 = [1, 0]
+big_df["B_EXER30"] = np.select(if_ex2, then_ex2)
+manip.create_binary(big_df, ["B_EXER30"], [1], [0, 77, 99, np.nan], "B_EXER30")
+
+big_df["B_SLEEPOK"] = big_df["SLEPTIM1"].copy()
+if_sl = [big_df["SLEPTIM1"] > 6]
+then_sl = [1]
+big_df["B_SLEEPOK"] = np.select(if_sl, then_sl)
+if_sl2 = [big_df["SLEPTIM1"] < 10]
+then_sl2 = [1]
+big_df["B_SLEEPOK"] = np.select(if_sl2, then_sl2)
+manip.create_binary(big_df, ["B_SLEEPOK"], [1], [77, 99, np.nan], "B_SLEEPOK")
+
+if_ph = [big_df["POORHLTH"] < 31]
+then_ph = [1]
+big_df["B_POORHLTH"] = np.select(if_ph, then_ph)
+manip.create_binary(big_df, ["B_POORHLTH"], [1], [77, 88, 99, np.nan], "B_POORHLTH")
+
+if_sb = [big_df["SEATBELT"] < 3, big_df["SEATBELT"] >= 3]
+then_sb = [1, 0]
+big_df["B_SEATBLT"] = np.select(if_sb, then_sb)
+
+# TRIM the DataFrame to a size that will allow for faster analysis on desired columns
+# Don't bother to include binary condition variables, their definition is too similar to the two outcome variables,
+# but keep TOTCHRONIC for visualizations (be sure to drop it before running models)
+
+med_df = pd.DataFrame(big_df, columns=["ID", "YEAR", "IMONTH", "_STATE", "_AGE_G", "SEX", "_IMPRACE", "_INCOMG", "_EDUCAG",
+                                       "EMPLOY1", "_BMI5CAT", "_LLCPWT2", "COMORB_1", "B_COUPLED", "B_SMOKER", "B_HLTHPLN",
+                                       "B_FRUIT", "B_VEGGIE", "B_EXERCISE", "B_EXER30", "B_SLEEPOK", "B_BINGER", "B_CHECKUP",
+                                       "B_GOODHLTH", "B_POORHLTH", "B_SEATBLT", "B_HIVRISK", "CHRONICGRP", "TOTCHRONIC"])
 
 # Add "WEIGHT" as a copy of "_LLCPTW2"
 med_df["WEIGHT"] = med_df["_LLCPWT2"].copy()
@@ -119,17 +158,17 @@ print("\n")
 # Last: Create TEXT/ String LABEL "L_" columns for all columns in the new DataFrame
 
 # Create new column with State Names
-states_dict = {1: 'Alabama', 2: 'Alaska', 4: 'Arizona', 5: 'Arkansas', 6: 'California', 8: 'Colorado', 9: 'Connecticut',
-               10: 'Delaware', 11: 'District of Columbia', 12: 'Florida', 13: 'Georgia', 15: 'Hawaii', 16: 'Idaho',
-               17: 'Illinois', 18: 'Indiana', 19: 'Iowa', 20: 'Kansas', 21: 'Kentucky', 22: 'Louisiana', 23: 'Maine',
-               24: 'Maryland', 25: 'Massachusetts', 26: 'Michigan', 27: 'Minnesota', 28: 'Mississippi', 29: 'Missouri',
-               30: 'Montana', 31: 'Nebraska', 32: 'Nevada', 33: 'New Hampshire', 34: 'New Jersey', 35: 'New Mexico',
-               36: 'New York', 37: 'North Carolina', 38: 'North Dakota', 39: 'Ohio', 40: 'Oklahoma', 41: 'Oregon',
-               42: 'Pennsylvania', 44: 'Rhode Island', 45: 'South Carolina', 46: 'South Dakota', 47: 'Tennessee',
-               48: 'Texas', 49: 'Utah', 50: 'Vermont', 51: 'Virginia', 53: 'Washington', 54: 'West Virginia',
-               55: 'Wisconsin', 56: 'Wyoming', 66: 'Guam', 72: 'Puerto Rico', 78: 'Virgin Islands'}
+# states_dict = {1: 'Alabama', 2: 'Alaska', 4: 'Arizona', 5: 'Arkansas', 6: 'California', 8: 'Colorado', 9: 'Connecticut',
+#               10: 'Delaware', 11: 'District of Columbia', 12: 'Florida', 13: 'Georgia', 15: 'Hawaii', 16: 'Idaho',
+#               17: 'Illinois', 18: 'Indiana', 19: 'Iowa', 20: 'Kansas', 21: 'Kentucky', 22: 'Louisiana', 23: 'Maine',
+#               24: 'Maryland', 25: 'Massachusetts', 26: 'Michigan', 27: 'Minnesota', 28: 'Mississippi', 29: 'Missouri',
+#               30: 'Montana', 31: 'Nebraska', 32: 'Nevada', 33: 'New Hampshire', 34: 'New Jersey', 35: 'New Mexico',
+#               36: 'New York', 37: 'North Carolina', 38: 'North Dakota', 39: 'Ohio', 40: 'Oklahoma', 41: 'Oregon',
+#               42: 'Pennsylvania', 44: 'Rhode Island', 45: 'South Carolina', 46: 'South Dakota', 47: 'Tennessee',
+#               48: 'Texas', 49: 'Utah', 50: 'Vermont', 51: 'Virginia', 53: 'Washington', 54: 'West Virginia',
+#              55: 'Wisconsin', 56: 'Wyoming', 66: 'Guam', 72: 'Puerto Rico', 78: 'Virgin Islands'}
 
-manip.recode_col(med_df, "_STATE", states_dict, "L_STATENM")
+# manip.recode_col(med_df, "_STATE", states_dict, "L_STATENM")
 
 
 states_abbr_dict = {1: 'AL', 2: 'AK', 4: 'AZ', 5: 'AR', 6: 'CA', 8: 'CO', 9: 'CT', 10: 'DE', 11: 'DC', 12: 'FL',
@@ -140,6 +179,25 @@ states_abbr_dict = {1: 'AL', 2: 'AK', 4: 'AZ', 5: 'AR', 6: 'CA', 8: 'CO', 9: 'CT
                     55: 'WI', 56: 'WY', 66: 'GU', 72: 'PR', 78: 'VI'}
 
 manip.recode_col(med_df, "_STATE", states_abbr_dict, "L_STATEAB")
+
+# REGIONS - Created to increase the signal of states with high levels of chronic disease
+# NNE (Northern New England): ME, NH & VT
+# NE (Northeast): MA, CT, RI, NY & NJ
+# MA (Mid-Atlantic): PA, DE, MD, DC & VA
+# SE (Southeast): NC, SC, GA & FL
+# EC (East-Central): WV, OH, IN, MI, KY, TN, AL, MS, LA, AR, MO & OK
+# CC (Central-Central): WI, IL, MN, IA, ND, SD, NE, KS & TX
+# WC (West-Central): WY, CO, NM, AZ & UT
+# WW (West-West): NV, CA, AK & HI
+# TT (Territories): GU, VI & PR
+regions_abbr_dict = {1: 'EC', 2: 'WW', 4: 'WC', 5: 'EC', 6: 'WW', 8: 'WC', 9: 'NE', 10: 'MA', 11: 'MA', 12: 'SE',
+                    13: 'SE', 15: 'WW', 16: 'PNW', 17: 'CC', 18: 'EC', 19: 'CC', 20: 'CC', 21: 'EC', 22: 'EC', 23: 'NNE',
+                    24: 'MA', 25: 'NE', 26: 'EC', 27: 'CC', 28: 'EC', 29: 'EC', 30: 'PNW', 31: 'CC', 32: 'WW', 33: 'NNE',
+                    34: 'NE', 35: 'WC', 36: 'NE', 37: 'SE', 38: 'CC', 39: 'EC', 40: 'EC', 41: 'PNW', 42: 'MA', 44: 'NE',
+                    45: 'SE', 46: 'CC', 47: 'EC', 48: 'CC', 49: 'WC', 50: 'NNE', 51: 'MA', 53: 'PNW', 54: 'EC',
+                    55: 'CC', 56: 'WC', 66: 'TT', 72: 'TT', 78: 'TT'}
+
+manip.recode_col(med_df, "_STATE", regions_abbr_dict, "L_REGION")
 
 # binary_dict = {0: 'No', 1: 'Yes'}
 # binary_labels = ["B_ASTHMA", "B_CANCER", "B_CHCCOPD", "B_ADDEPEV", "B_DIABETE", "B_HEART", "B_SMOKER", "B_HLTHPLN", "B_COUPLED", "COMORB_1"]
@@ -163,31 +221,21 @@ manip.recode_col(med_df, "_AGE_G", age_dict2, "L_AGE_G")
 sex_dict = {1: "MALE", 2: "FEMALE"}
 manip.recode_col(med_df, "SEX", sex_dict, "L_SEX")
 
-race_dict = {1: "White", 2: "Black / African Am", 3: "Asian Am", 4: "Native Am/PI/AK Native", 5: "Hispanic", 6: "Other"}
+race_dict = {1: "WHITE", 2: "BLACK", 3: "ASIAN", 4: "NA/PI/AN", 5: "HISPANIC", 6: "OTHRACE"}
 manip.recode_col(med_df, "_IMPRACE", race_dict, "L_IMPRACE")
 
-race_dict2 = {1: "WHITE", 2: "BIPOC"}
-manip.recode_col(med_df, "B_RACE", race_dict2, "L_RACE")
-
-employ_dict = {1: "EMPLOYED", 2: "SELF-EMPLOYED", 3: "OOW 1 yr+", 4: "OOW <1 yr", 5: "HOMEMAKER",
+employ_dict = {1: "EMPLOYED", 2: "SELF-EMPLOYED", 3: "OOW 1 yr+", 4: "OOW lt 1 yr", 5: "HOMEMAKER",
                6: "STUDENT", 7: "RETIRED", 8: "UNABLE"}
 manip.recode_col(med_df, "EMPLOY1", employ_dict, "L_EMPLOY1")
 
-marital_dict = {1: "MARRIED", 2: "DIVORCED", 3: "WIDOWED", 4: "SEPARATED", 5: "NEVER MARRIED", 6: "UNMARRIED COUPLE"}
-manip.recode_col(med_df, "MARITAL", marital_dict, "L_MARITAL")
-
-income_dict = {1: "<$15K", 2: "$15K-25K", 3: "$25K-35K", 4: "$35K-50K", 5: "$50K+"}
+income_dict = {1: "$15K", 2: "$15K-25K", 3: "$25K-35K", 4: "$35K-50K", 5: "$50K+"}
 manip.recode_col(med_df, "_INCOMG", income_dict, "L_INCOMG")
 
-educa_dict = {1: "< HS", 2: "HS GRAD", 3: "SOME COLLEGE", 4: "COLLEGE GRAD"}
+educa_dict = {1: "lt HS", 2: "HS GRAD", 3: "SOME COLLEGE", 4: "COLLEGE GRAD"}
 manip.recode_col(med_df, "_EDUCAG", educa_dict, "L_EDUCAG")
 
 bmi_dict = {1: "UNDER WEIGHT", 2: "NORMAL WEIGHT", 3: "OVER WEIGHT", 4: "OBESE"}
 manip.recode_col(med_df, "_BMI5CAT", bmi_dict, "L_BMI5CAT")
-
-month_dict = {1: "January", 2: "February", 3: "March", 4: "April", 5: "May", 6: "June", 7: "July", 8: "August",
-              9: "September", 10: "October", 11: "November", 12: "December"}
-manip.recode_col(med_df, "IMONTH", month_dict, "L_IMONTH")
 
 # create report CSV(s)
 #

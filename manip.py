@@ -21,6 +21,7 @@ import re
 import datetime
 import numpy as np
 import pandas as pd
+import sklearn.utils as sku
 
 
 # count_matches
@@ -191,3 +192,128 @@ def recode_col(df, existing_col, mapping_dict, new_col):
 def numeric_only(df):
     numerics = ['int16', 'int32', 'int64', 'float16', 'float32', 'float64']
     return df.select_dtypes(include=numerics)
+
+
+# For categorical data
+#
+def doCleanupEncode(X, y=None, cat=None, oh=None, binary=None, loo=None, woe=None, lp_cols=None, NoData=True):
+    from enrich import replaceCVs
+    from enrich import one_hot_encode
+    from category_encoders import BinaryEncoder
+    from category_encoders import OneHotEncoder
+    from category_encoders import WOEEncoder
+    from category_encoders import LeaveOneOutEncoder
+
+    if NoData is False:
+        if cat is not None | oh is not None:
+            # translate associated columns' null, NaN, blank and 9 values to zero
+            X = replaceCVs(X, cat + oh, [np.nan, 9, "", " "], 0)
+
+    if oh is not None:
+        if NoData:
+            ec = OneHotEncoder(cols=oh, use_cat_names=True, return_df=True, handle_unknown='indicator', handle_missing='indicator').fit(X)
+            X = ec.fit_transform(X)
+            # dropping these columns did not help performance
+            # for o in oh:
+            #    stem = o.split("_")[1]
+            #    d1 = "L_" + stem + "_-1"
+            #    d2 = "L_" + stem + "_nan"
+            #    print("DROPPING ", d1, " ", d2, "\n")
+            #    X.drop(d1, axis=1, errors='ignore', inplace=True)
+            #    X.drop(d2, axis=1, errors='ignore', inplace=True)
+        else:
+            # one-hot encode, then drop 0 if created
+            for oh_c in oh:
+                X = one_hot_encode(X, oh_c)
+                X.drop(0, axis=1, errors='ignore', inplace=True)
+
+    if binary is not None:
+        # binary encode binary columns
+        if NoData:
+            enc = BinaryEncoder(cols=binary, drop_invariant=True, return_df=True, handle_unknown='indicator').fit(X)
+            X = enc.transform(X)
+        else:
+            enc = BinaryEncoder(cols=binary, drop_invariant=True, return_df=True).fit(X)
+            X = enc.transform(X)
+
+    if woe is not None:
+        # use weight of evidence on woe columns
+        for w in woe:
+            X[w] = X[w].fillna('NoData')
+
+        wenc = WOEEncoder(cols=woe).fit(X, y)
+        X = wenc.transform(X).round(2)
+
+    if loo is not None:
+        # use leave one out on loo columns
+        for l in loo:
+            X[l] = X[l].fillna('NoData')
+
+        lenc = LeaveOneOutEncoder(cols=loo, return_df=True).fit(X, y)
+        X = lenc.transform(X).round(2)
+
+
+    # Cast all to int64
+    # X = X.astype("int64")
+
+    if lp_cols is not None:
+        # drop least predictive
+        X.drop(lp_cols, axis=1, errors="ignore", inplace=True)
+
+    X.reset_index(drop=True, inplace=True)
+    return X
+
+
+def rebalanceSample(df, col, majority_val, minority_val, minority_percent, seed):
+    # Separate majority and minority classes
+    df_majority = df[df[col] == minority_val]
+    df_minority = df[df[col] == majority_val]
+
+    # Re-sample minority class
+    total = df[col].count()
+    n = int(total * minority_percent)
+    df_minority_resampled = sku.resample(df_minority,
+                                         replace=True,  # sample with replacement
+                                         n_samples=n,
+                                         random_state=seed)
+
+    # Re-sample the majority class in a complementary manner
+    n2 = total - n
+    df_majority_resampled = sku.resample(df_majority,
+                                         replace=True,  # sample with replacement
+                                         n_samples=n2,
+                                         random_state=seed)
+
+    df_resampled = pd.concat([df_majority_resampled, df_minority_resampled])
+
+    # Display new class counts
+    print(df_resampled[col].value_counts())
+    df_resampled.reset_index(drop=True, inplace=True)
+    return df_resampled
+
+
+def rebalanceMulticlass(df, col, num_classes, class_values, seed):
+    # separate class values
+    c = {}
+    for i in range(num_classes):
+        c[i] = df[df[col] == class_values[i]]
+
+    # print(c)
+    # Re-sample classes to be equal in size
+    total = df[col].count()
+    ppc = 1 / num_classes
+    n = int(total * ppc)
+    dfs = []
+    for i in range(num_classes):
+        df = sku.resample(c[i],
+                          replace=True,  # sample with replacement
+                          n_samples=n,
+                          random_state=seed)
+        dfs.append(df)
+
+    final_df = pd.concat(dfs, ignore_index=True)
+    final_df.reset_index(drop=True, inplace=True)
+
+    # Display new class counts
+    # print(final_df[col].value_counts())
+    return final_df
